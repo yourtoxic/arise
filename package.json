@@ -1,0 +1,70 @@
+{
+  "name": "arise",
+  "version": "1.0.0",
+  "description": "ARISE - productivity, discipline and activity system",
+  "author": {
+    "name": "Toxic",
+    "email": "yourtoxic@users.noreply.github.com"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/yourtoxic/arise",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourtoxic/arise.git"
+  },
+  "main": "main.js",
+  "scripts": {
+    "start": "electron . --no-sandbox",
+    "build:deb": "electron-builder --linux deb"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.yourtoxic.arise",
+    "productName": "ARISE",
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**"
+    ],
+    "electronLanguages": [
+      "en-US"
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Utility",
+      "maintainer": "Toxic <yourtoxic@users.noreply.github.com>",
+      "icon": "build/icons",
+      "executableArgs": [
+        "--no-sandbox"
+      ]
+    },
+    "deb": {
+      "afterInstall": "build/after-install.sh"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "yourtoxic",
+      "repo": "arise",
+      "releaseType": "release"
+    }
+  }
+}
