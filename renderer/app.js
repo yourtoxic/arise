@@ -118,9 +118,12 @@ function openChest(c) {
   add(CONS[(n - 1) % CONS.length]); if (n % 3 === 0) add(EQS[(n / 3 - 1) % EQS.length]); if (n % 5 === 0) add(COSS[(n / 5 - 1) % COSS.length]);
   c.status = 'opened'; c.items = got; c.openedAt = Date.now(); return got;
 }
-function useItem(id) {
+async function useItem(id) {
   const it = ITEMS[id]; if (!it || it.t !== 'consumable' || !(S.inv[id] > 0)) return say('CANNOT USE', 'You do not have this item.');
-  if (!confirm(it.n + ': ' + it.d + '\n\nUse it now?')) return;
+  if (await askConfirm(it.n + ': ' + it.d + '\n\nUse it now?', 'Use')) { applyItem(id); save(); render(); }
+}
+function applyItem(id) {
+  const it = ITEMS[id]; if (!it || it.t !== 'consumable' || !(S.inv[id] > 0)) return say('CANNOT USE', 'You do not have this item.');
   if (id === 'recovery_potion') { if (S.rpAt >= weekStart()) return say('LIMIT REACHED', 'One Recovery Potion per week.'); const p = S.penalties.filter(x => x.status === 'applied').pop(); if (!p) return say('NO PENALTY', 'No open penalty to cancel.');
     p.status = 'reversed'; p.audit = 'Recovery Potion ' + new Date().toLocaleString(); addXp(-p.xp, 'Recovery Potion: ' + p.title, true); if (['high', 'critical'].includes(p.level)) S.shadowOff = 0; S.rpAt = Date.now(); }
   else if (id === 'xp_elixir') { if (S.buffs.xpQ > 0) return say('ALREADY ACTIVE', 'XP Elixir is running.'); S.buffs.xpQ = 3; }
@@ -445,15 +448,33 @@ const vProf = () => {
 
 let aboutInfo = null;
 const vAbout = () => { const i = aboutInfo || {};
-  return `<h1>About</h1><div class="win"><h3>ARISE</h3><p><b>From Zero to Unstoppable.</b></p><p>ARISE turns daily work into a game: quests, dungeons, XP, ranks, shadows, puzzles and an optional AI coach. It helps you plan, focus and build discipline without shame or harsh punishment.</p>
+  return `<h1>About</h1><div class="win"><h3>ARISE</h3><p><b>From Zero to Unstoppable!</b></p><p>ARISE turns daily work into a game: quests, dungeons, XP, ranks, shadows, puzzles and an optional AI coach. It helps you plan, focus and build discipline without shame or harsh punishment.</p>
   <div class="grid"><div class="win"><small>Version</small><span style="font-size:26px">${esc(i.version || upd.cur || '-')}</span></div><div class="win"><small>Platform</small><span style="font-size:20px">${esc(i.platform || '-')}</span></div><div class="win"><small>Electron</small><span style="font-size:20px">${esc(i.electron || '-')}</span></div></div></div>
   <div class="win"><h3>What is inside</h3><ul><li>Quests with schedule, reminders, stakes and subtasks, plus calendar view</li><li>Daily quests, daily goals and reward chests</li><li>Dungeons (full-screen focus timer) and the Shadow Army</li><li>Fair penalty system: grace period, caps, recovery dungeon, appeals, XP debt</li><li>Ranks E to S with titles, skills, inventory and equipment</li><li>Five puzzle games with daily challenges</li><li>Quest Log notes, AI Coach (optional), profile and backup</li></ul></div>
   <div class="win"><h3>Privacy</h3><p>Your data stays on this computer${i.dataDir ? ' in <span class="mute">' + esc(i.dataDir) + '</span>' : ''}. There is no account and no tracking. The AI Coach sends data only when you use it, and only to the provider you chose.</p></div>
-  <div class="win"><h3>Credits and license</h3><p>Made by Toxic. Released under the MIT License.</p><p class="mute">ARISE is an unofficial fan project inspired by Solo Leveling. It is not affiliated with or endorsed by its creators or publishers. Shadow Army artwork was supplied by the app owner and belongs to its respective rights holders.</p></div>
+  <div class="win"><h3>ARISE — Credits &amp; License</h3><p><b>ARISE — From Zero to Unstoppable!</b> is a personal productivity and self-improvement app created by <b>MD Tajriyan Rahman</b>, a 22-year-old engineering student from Bangladesh. I built ARISE to improve myself, develop discipline, become stronger and more active, and build better habits. This app represents my personal journey toward becoming a better version of myself.</p>
+  <p><b>Created &amp; Developed by:</b> MD Tajriyan Rahman<br><b>Copyright © 2026 MD Tajriyan Rahman. All Rights Reserved.</b></p>
+  <p>ARISE is inspired by personal growth, discipline, and gamified progression. Some ideas take inspiration from <i>Solo Leveling</i>, but ARISE is an independent project and is not affiliated with or endorsed by its creators. Third-party libraries, tools, and assets remain under their respective owners' licenses.</p>
+  <p>All original ARISE source code, UI, designs, branding, and content are protected by copyright. Reproduction, redistribution, modification, or commercial use without permission is prohibited. Third-party components remain subject to their own licenses.</p>
+  <p><b>Disclaimer:</b> ARISE is a self-improvement and productivity tool, not a substitute for professional medical, psychological, or fitness advice.</p>
+  <p><i>“I am not building ARISE because I am perfect. I am building it because I want to become better.”</i></p>
+  <p><b>Every quest is a challenge. Every challenge is an opportunity. Every day is a chance to ARISE!</b></p></div>
   <div class="row"><button class="btn" data-go="upd">Check for updates</button><button class="btn q" data-go="guide">Open the Guide</button></div>`; };
 const fmt = s => p2(Math.floor(s / 60)) + ':' + p2(s % 60);
 const V = { dash: vDash, quests: vQuests, status: vStatus, skills: vSkills, inv: vInv, army: vArmy, set: vSet, coach: vCoach, cal: vCal, rewards: vRewards, upd: vUpd, log: vLog, pz: () => vPz(), prof: vProf, guide: vGuide, about: () => vAbout() };
 
+function askConfirm(msg, okText) {
+  return new Promise(res => {
+    const b = box('cfbox'), prev = document.activeElement;
+    b.innerHTML = `<div class="cfm"><div class="win cfin" role="alertdialog" aria-modal="true"><h3>Please confirm</h3><p>${esc(msg).replace(/\n/g, '<br>')}</p><div class="row" style="justify-content:flex-end"><button class="btn q" data-cf="0">Cancel</button><button class="btn" data-cf="1">${esc(okText || 'Confirm')}</button></div></div></div>`;
+    const cancel = b.querySelector('[data-cf="0"]');
+    const done = v => { document.removeEventListener('keydown', key, true); b.innerHTML = ''; if (prev && prev !== document.body && document.contains(prev) && prev.focus) prev.focus(); res(v); };
+    const key = e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(false); } };
+    document.addEventListener('keydown', key, true);
+    b.onclick = e => { const x = e.target.closest('[data-cf]'); if (x) done(x.dataset.cf === '1'); else if (e.target.classList.contains('cfm')) done(false); };
+    cancel.focus();
+  });
+}
 const setH = (el, h) => { if (el.__h === h) return false; el.innerHTML = h; el.__h = h; return true; };
 const box = id => { let e = document.getElementById(id); if (!e) { e = document.createElement('div'); e.id = id; document.body.appendChild(e); } return e; };
 function ensureShell() {
@@ -530,7 +551,7 @@ async function completeQuest(q, late) {
   save(); render();
 }
 document.addEventListener('click', e => { const t = e.target; if (t.matches && t.matches('input[type=datetime-local],input[type=date],input[type=time]')) { try { t.showPicker(); } catch {} } });
-document.addEventListener('click', e => {
+document.addEventListener('click', async e => {
   const g = e.target.closest('[data-go]'); if (g) { view = g.dataset.go; return render(); }
   const b = e.target.closest('[data-act]'); if (!b) return;
   if (b.dataset.act.startsWith('pz')) { if (pzAct(b)) { save(); render(); } return; }
@@ -550,21 +571,21 @@ document.addEventListener('click', e => {
   else if (a === 'fstart') { if (timer) dgMin = false; else startTimer(Math.max(1, Math.min(180, Math.round(+v('fm') || 25)))); }
   else if (a === 'dgmin') dgMin = true;
   else if (a === 'dgmax') dgMin = false;
-  else if (a === 'dgleave') { if (!confirm('Leave the gate? You earn nothing for this run.')) return; clearInterval(dgTick); timer = null; S.dg = null; dgMin = false; }
+  else if (a === 'dgleave') { if (!(await askConfirm('Leave the gate? You earn nothing for this run.', 'Leave gate'))) return; clearInterval(dgTick); timer = null; S.dg = null; dgMin = false; }
   else if (a === 'recover') return;
   else if (a === 'ruclose') rankUp = null;
   else if (a === 'csend') { sendChat(); return; }
-  else if (a === 'cclear') { if (!confirm('Clear the whole chat?')) return; S.chat = []; }
+  else if (a === 'cclear') { if (!(await askConfirm('Clear the whole chat?', 'Clear'))) return; S.chat = []; }
   else if (a === 'ntest') { S.notif.sec = Math.min(10, Math.max(1, Math.round(+v('nsec') || 5))); notify('ARISE', 'Test: your Study is starting soon!', 'start'); return; }
   else if (a === 'saveabout') { const res = parseAbout({ age: v('pa'), hu: v('phu'), h1: v('ph1'), h2: v('ph2'), w: v('pw'), wu: v('pwu') }, S.profile); if (res.err) return say('INPUT NEEDED', res.err); Object.assign(S.profile, res.data); say('PROFILE SAVED', 'About you updated.'); }
   else if (a === 'addhob') { const h = v('phb').trim().slice(0, 30); if (!h) return say('INPUT NEEDED', 'Type a hobby.'); const l = S.profile.hobbies = S.profile.hobbies || []; if (l.length >= 12) return say('LIMIT', 'Up to 12 hobbies.'); if (!l.some(x => x.toLowerCase() === h.toLowerCase())) l.push(h); }
   else if (a === 'delhob') { S.profile.hobbies.splice(+id, 1); }
-  else if (a === 'reset') { if (v('rst') !== 'RESET') return say('RESET', 'Type RESET exactly to confirm.'); if (!confirm('Last warning: delete ALL ARISE progress, notes, items and settings on this computer?')) return; clearTimeout(nt); clearInterval(dgTick); timer = null; S = DEF(); window.arise.reset(S).then(ok => { if (ok) location.reload(); else say('RESET FAILED', 'Nothing was deleted. Try again.'); }); return; }
+  else if (a === 'reset') { if (v('rst') !== 'RESET') return say('RESET', 'Type RESET exactly to confirm.'); if (!(await askConfirm('Last warning: delete ALL ARISE progress, notes, items and settings on this computer? This cannot be undone.', 'Delete everything'))) return; clearTimeout(nt); clearInterval(dgTick); timer = null; S = DEF(); window.arise.reset(S).then(ok => { if (ok) location.reload(); else say('RESET FAILED', 'Nothing was deleted. Try again.'); }); return; }
   else if (a === 'editq') editId = id;
   else if (a === 'cancelq') editId = '';
   else if (a === 'saveq') { const st = v('es'), en = v('ee'), rm = Math.round(+v('er')); if (st && !en) return say('INPUT NEEDED', 'Add an end time.'); if (st && en && !(new Date(en) > new Date(st))) return say('INPUT NEEDED', 'End must be after start.'); if (!(rm >= 0 && rm <= 1440)) return say('INPUT NEEDED', 'Reminder must be 0 to 1440 minutes.');
     q.start = st; q.due = en; q.remind = rm; q.wStart = q.wEnd = q.wSense = false; q.reviewed = false; editId = ''; say('QUEST UPDATED', q.title); }
-  else if (a === 'use') useItem(id);
+  else if (a === 'use') { useItem(id); return; }
   else if (a === 'opench') { const got = openChest(S.chests.find(x => x.id === id)); if (got) say('CHEST OPENED', got.map(i => ITEMS[i].n).join(', ')); }
   else if (a === 'eqp') { const it = ITEMS[id]; if (!it || !S.inv[id] || !['weapon', 'armor', 'ring'].includes(it.t)) return; S.equip[it.t] = id; say('EQUIPPED', it.n); }
   else if (a === 'uneq') S.equip[b.dataset.slot] = '';
@@ -572,10 +593,10 @@ document.addEventListener('click', e => {
   else if (a === 'sett') { if (S.titles.includes(b.dataset.t)) S.profile.title = b.dataset.t; }
   else if (a === 'insp') inspect = id || '';
   else if (a === 'unlk') { const k = SK.find(x => x.id === id), m = statMap(); if (!k || S.perks[id] || m[k.st] < k.s || lvl(S.xp).l < k.l) return say('LOCKED', 'Requirements not met.'); S.perks[id] = Date.now(); say('NEW SKILL ACQUIRED', k.n); }
-  else if (a === 'delq') { if (!confirm('Delete this quest?')) return; S.quests = S.quests.filter(x => x.id !== id); }
+  else if (a === 'delq') { if (!(await askConfirm('Delete this quest?', 'Delete'))) return; S.quests = S.quests.filter(x => x.id !== id); }
   else if (a === 'newn') S.notes.unshift({ id: crypto.randomUUID(), title: '', body: '', pin: false, at: Date.now(), upd: Date.now() });
   else if (a === 'pinn') { const n = S.notes.find(x => x.id === id); if (n) n.pin = !n.pin; }
-  else if (a === 'deln') { if (!confirm('Delete this note?')) return; S.notes = S.notes.filter(x => x.id !== id); }
+  else if (a === 'deln') { if (!(await askConfirm('Delete this note?', 'Delete'))) return; S.notes = S.notes.filter(x => x.id !== id); }
   else if (a === 'recdun') { const pp = S.penalties.find(x => x.id === id); if (!pp || pp.status !== 'applied') return; if (timer) return say('DUNGEON BUSY', 'Finish or leave the current dungeon first.'); startTimer(pp.recovery.min || 15, id); }
   else if (a === 'wrev') { S.reviews.push({ at: Date.now(), reason: v('wr'), note: v('wn').trim() }); S.review.needed = false; say('REVIEW DONE', 'You can add quests again.'); }
   else if (a === 'appeal') { const p = S.penalties.find(x => x.id === id); p.status = 'reversed'; p.audit = 'Appealed ' + new Date().toLocaleString(); addXp(-p.xp, 'Appeal reversed: ' + p.title, true); if (['high', 'critical'].includes(p.level)) S.shadowOff = 0; say('PENALTY REVERSED', 'Audit entry saved.'); }
@@ -611,7 +632,7 @@ document.addEventListener('keydown', e => { if (e.target.id === 'cin' && e.key =
 document.addEventListener('input', e => {
   const t = e.target;
   if (t.id === 'gq') { guideQ = t.value; const b = document.getElementById('gl'); if (b) { b.innerHTML = guideHtml(); shell.main.__h = V[view](); } return; }
-  if (t.id === 'lq') { logQ = t.value; clearTimeout(lqT); lqT = setTimeout(() => { const b = document.getElementById('notes'); if (b) { b.innerHTML = notesHtml(); shell.main.__h = V[view](); } }, 60); return; }
+  if (t.id === 'lq') { logQ = t.value; const b = document.getElementById('notes'); if (b) { b.innerHTML = notesHtml(); shell.main.__h = V[view](); } return; }
   if (t.dataset && t.dataset.nid) { const n = S.notes.find(x => x.id === t.dataset.nid); if (!n) return; if (t.classList.contains('nt')) n.title = t.value; else n.body = t.value; n.upd = Date.now(); clearTimeout(nt); nt = setTimeout(save, 400); }
 });
 document.addEventListener('change', e => {

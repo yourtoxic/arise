@@ -3,7 +3,7 @@
   "version": "1.0.1",
   "description": "ARISE - productivity, discipline and activity system",
   "author": {
-    "name": "Toxic",
+    "name": "MD Tajriyan Rahman",
     "email": "yourtoxic@users.noreply.github.com"
   },
   "license": "MIT",
@@ -58,13 +58,16 @@
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "ARISE",
+      "uninstallDisplayName": "ARISE"
     },
     "publish": {
       "provider": "github",
       "owner": "yourtoxic",
       "repo": "arise",
       "releaseType": "release"
-    }
+    },
+    "copyright": "Copyright © 2026 MD Tajriyan Rahman"
   }
 }
