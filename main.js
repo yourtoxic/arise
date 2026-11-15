@@ -3,6 +3,8 @@ const fs = require('fs'), path = require('path');
 let autoUpdater = null; try { autoUpdater = require('electron-updater').autoUpdater; } catch {}
 if (process.env.APPIMAGE) app.commandLine.appendSwitch('no-sandbox');
 let win = null;
+const APP_ID = (() => { try { return (require('./package.json').build || {}).appId || 'com.arise.app'; } catch { return 'com.arise.app'; } })();
+if (process.platform === 'win32') app.setAppUserModelId(app.isPackaged ? APP_ID : process.execPath);
 const file = () => path.join(app.getPath('userData'), 'arise.json');
 const kf = () => path.join(app.getPath('userData'), 'arise-key.json');
 const SYS = 'You are a supportive productivity coach inside the ARISE app. Use only the data given. Never shame the user. Be concise, concrete and realistic. Plain text only.';
@@ -109,5 +111,6 @@ app.whenReady().then(() => {
   win = new BrowserWindow({ width: 1100, height: 720, minWidth: 700, backgroundColor: '#050505', title: 'ARISE', icon: path.join(__dirname, 'renderer/assets/icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, sandbox: true } });
   win.loadFile('renderer/index.html');
+  win.on('focus', () => { try { win.webContents.focus(); } catch {} });
 });
 app.on('window-all-closed', () => app.quit());

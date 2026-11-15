@@ -197,3 +197,6 @@ body.indg{overflow:hidden}
 .tag.done{color:#38e8a8;border-color:#38e8a8}
 .army img.sa{width:120px;height:140px;object-fit:contain;filter:drop-shadow(0 0 12px var(--pu))}
 .sh.lock img.sa{opacity:.28;filter:none}.sh.on img.sa{animation:pls 3s ease-in-out infinite}
+
+.cfm{position:fixed;inset:0;z-index:70;display:grid;place-items:center;background:rgb(2 4 10 / .72);animation:dgin .15s ease both}
+.cfin{width:min(440px,90vw);margin:0}.cfin p{margin:6px 0 14px}

@@ -82,7 +82,7 @@ The package fixes the Chromium sandbox permission automatically after install.
 Requirements: Node.js 20+ and npm, Git.
 
 ```bash
-git clone https://github.com/yourtoxic/arise.git
+git clone https://github.com/YOURNAME/arise.git
 cd arise
 npm install
 npm start
